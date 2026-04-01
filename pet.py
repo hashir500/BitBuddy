@@ -12,9 +12,11 @@ class Pet:
     energyMax: int = 100
     happinessMax: int = 100
     healthMax: int = 100
-    initial_time :int = time.time()
-    interval:int = 7200
+   
     
+    def __post_init__(self,):
+         self.initial_time = time.time()
+         self.interval =7200
 
     def get_status(self):
         return (f"""Hiya! {self.name} here, here are my stats:\n
@@ -50,8 +52,9 @@ class Pet:
         
         
 def main():
-    p1 = Pet(name='Buddy')
-    status = p1.time_passes()
-    print(status)
+   p1 = Pet(name='Buddy')
+    # To test, check the status after the logic runs
+   p1.time_passes() 
+   print(p1.get_status())
 
 main()

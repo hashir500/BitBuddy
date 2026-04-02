@@ -78,9 +78,3 @@ class Pet:
          
         
         
-def main():
-   p1 = Pet(name='Buddy')
-   p1.time_passes() 
-   print(p1.get_status())
-
-main()

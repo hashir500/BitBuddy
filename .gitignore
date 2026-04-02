@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+.venv1/
+.venv311/
+venv/
+env/
+
+# VS Code settings
+.vscode/
+
+# Byte-compiled files
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Pyinstaller
+*.spec
+dist/
+build/

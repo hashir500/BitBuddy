@@ -28,25 +28,23 @@ class Pet:
             """)
 
     def time_passes(self):
-        
-            current_time = time.time()
-            time_passed = current_time - self.initial_time
+        current_time = time.time()
+        time_passed = current_time - self.initial_time
 
-            if time_passed >= self.interval:
+        if time_passed >= self.interval:
+            chunk = int(time_passed // self.interval)
+            
+           
+            self.energy = max(0, self.energy - (5 * chunk))
+            self.hunger = max(0, self.hunger - (5 * chunk))
+            self.happiness = max(0, self.happiness - (3 * chunk))
 
-                chunk = int(time_passed//self.interval)
-                self.energy-=5 * chunk
-                self.health-=5 * chunk
-                self.hunger-=5 * chunk
-                self.happiness-=5 * chunk
-
-                self.initial_time += (chunk * self.interval)
-        
-
-                self.energy = max(0, self.energy)
-                self.health = max(0, self.health)
-                self.hunger = max(0, self.hunger)
-                self.happiness = max(0, self.happiness)
+            
+            if self.hunger <= 0 or self.energy <= 0:
+                self.health = max(0, self.health - (10 * chunk))
+            
+            
+            self.initial_time += (chunk * self.interval)
 
     def feed(self):
         if self.hunger < self.hungerMax:
@@ -69,5 +67,12 @@ class Pet:
             return True, "That was fun! Let's do it again."
         return False, "I'm too tired to play... let me sleep."
          
+
+    def get_condition(self):
+        if self.health <= 0: return "DEAD"
+        if self.health < 30: return "SICK"
+        if self.hunger < 20: return "STARVING"
+        if self.energy < 20: return "TIRED"
+        return "HAPPY"
         
         

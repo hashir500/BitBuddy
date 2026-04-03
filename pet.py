@@ -16,7 +16,7 @@ class Pet:
     
     def __post_init__(self,):
          self.initial_time = time.time()
-         self.interval =7200
+         self.interval =1
 
     def get_status(self):
         return (f"""Hiya! {self.name} here, here are my stats:\n

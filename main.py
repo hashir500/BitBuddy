@@ -4,7 +4,7 @@ from pet import Pet
 
 
 BASE_SIZE = 400 
-ANIMATION_SPEED = 4000
+ANIMATION_SPEED = 3500
 
 class TamagotchiApp:
     def __init__(self, root, pet):

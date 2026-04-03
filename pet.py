@@ -50,31 +50,33 @@ class Pet:
 
     def feed(self):
             
-            if self.hunger == self.hungerMax:
-                print(f"I am full")
-                return
-    
-            print(f"Feeding {self.name}")
-            self.hunger += 10
-            self.happiness +=2
-            
-
-            if self.hunger >= self.hungerMax:
-                self.hunger = self.hungerMax
-
-            if self.happiness >= self.happinessMax:
-                self.happiness = self.happinessMax 
-
-            print(f"Thank you for the meal!")
+            if self.hunger < self.hungerMax:
+                self.hunger = min(self.hungerMax, self.hunger + 20)
+                self.health = min(self.healthMax, self.health + 2)
+                print(f"Thank you for the meal!")
+                return True
+            print("Not Hungry")
+            return False
             
 
 
     def sleep(self):
-            print("Going to sleep, Bye!")
-            self.energy = min(self.energyMax,self.energy + 10)
-            self.hunger = max(0,self.hunger - 5)
-            self.happiness = min(self.happinessMax,self.happiness + 5)
-            print("I am back now, missed me?")
+            if self.energy < self.energyMax:
+                print("Going to sleep, Bye!")
+                self.energy = min(self.energyMax, self.energy + 40)
+                self.hunger = max(0, self.hunger - 10)
+                print("I am back now, missed me?")
+                return True
+            print("Not sleepy")
+            return False
+    
+    def play(self):
+        if self.energy > 20:
+            self.happiness = min(self.happinessMax, self.happiness + 15)
+            self.energy = max(self.energyMax,self.energyMax - 15)
+            return True
+    
+        return False
          
         
         

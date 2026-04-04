@@ -67,21 +67,30 @@ class Pet:
             self.initial_time += (chunk * self.interval)
 
     def feed(self):
-        if self.hunger < self.hungerMax:
+        if self.health <= 0:
+            return False, "It's too late... Rex is gone."
+        
+        elif self.hunger < self.hungerMax:
             self.hunger = min(self.hungerMax, self.hunger + 20)
             self.health = min(self.healthMax, self.health + 2)
             return True, "Thank you for the meal!"
         return False, "I'm too full to eat right now."
 
     def sleep(self):
-        if self.energy < self.energyMax:
+        if self.health <= 0:
+            return False, "It's too late... Rex is gone."
+        
+        elif self.energy < self.energyMax:
             self.energy = min(self.energyMax, self.energy + 40)
             self.hunger = max(0, self.hunger - 10)
             return True, "Zzz... Rex is feeling refreshed!"
         return False, "Not sleepy! I want to play!"
     
     def play(self):
-        if self.energy >= 20:
+        if self.health <= 0:
+            return False, "It's too late... Rex is gone."
+        
+        elif self.energy >= 20:
             self.happiness = min(self.happinessMax, self.happiness + 15)
             self.energy = max(0, self.energy - 20)
             return True, "That was fun! Let's do it again."

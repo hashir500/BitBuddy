@@ -19,13 +19,27 @@ class Pet:
          self.interval =1
 
     def get_status(self):
-        return (f"""Hiya! {self.name} here, here are my stats:\n
-    Health: {self.health} / {self.healthMax} 
-    Hunger: {self.hunger} / {self.hungerMax} 
-    Energy: {self.energy} / {self.energyMax} 
-    Happiness: {self.happiness} / {self.happinessMax} 
-            
-            """)
+        # Determine the warning message based on current stats
+        condition = self.get_condition()
+        warning = ""
+        
+        if condition == "DEAD":
+            warning = "REX HAS PASSED AWAY..."
+        elif condition == "STARVING":
+            warning = "I'm starving! Please feed me!"
+        elif condition == "TIRED":
+            warning = "I'm exhausted... I need sleep."
+        elif condition == "SICK":
+            warning = "I don't feel so good..."
+        else:
+            warning = f"Hiya! {self.name} here!"
+
+        return (f"{warning}\n"
+                f"{'-'*30}\n"
+                f"Health:    {self.health}/{self.healthMax}\n"
+                f"Hunger:    {self.hunger}/{self.hungerMax}\n"
+                f"Energy:    {self.energy}/{self.energyMax}\n"
+                f"Happiness: {self.happiness}/{self.happinessMax}")
 
     def time_passes(self):
         current_time = time.time()
@@ -34,15 +48,21 @@ class Pet:
         if time_passed >= self.interval:
             chunk = int(time_passed // self.interval)
             
-           
+            #Passive Decay
             self.energy = max(0, self.energy - (5 * chunk))
             self.hunger = max(0, self.hunger - (5 * chunk))
             self.happiness = max(0, self.happiness - (3 * chunk))
 
-            
+            #Health Decay
             if self.hunger <= 0 or self.energy <= 0:
                 self.health = max(0, self.health - (10 * chunk))
             
+            #DEATH LOGIC
+            if self.health <= 0:
+                self.health = 0
+                self.hunger = 0
+                self.energy = 0
+                self.happiness = 0
             
             self.initial_time += (chunk * self.interval)
 

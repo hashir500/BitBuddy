@@ -3,7 +3,7 @@ from PIL import Image, ImageTk, ImageSequence
 from pet import Pet
 
 BASE_SIZE = 400 
-ANIMATION_SPEED = 150 
+ANIMATION_SPEED = 1500
 
 class TamagotchiApp:
     def __init__(self, root, pet):
@@ -64,9 +64,9 @@ class TamagotchiApp:
         self.is_busy = False
         condition = self.pet.get_condition()
         if condition == "DEAD":
-            self.set_animation("dead.gif")
+            self.set_animation("assests/dead.gif")
         elif condition == "SICK":
-            self.set_animation("sick.gif")
+            self.set_animation("assests/sick.gif")
         else:
             self.set_animation("assests/idle.gif")
 
@@ -90,8 +90,8 @@ class TamagotchiApp:
         # Auto-switch to sick/dead GIF if not currently performing an action
         if not self.is_busy:
             condition = self.pet.get_condition()
-            if condition == "DEAD": self.set_animation("dead.gif")
-            elif condition == "SICK": self.set_animation("sick.gif")
+            if condition == "DEAD": self.set_animation("assests/dead.gif")
+            elif condition == "SICK": self.set_animation("assests/sick.gif")
             
         self.root.after(5000, self.update_logic)
 

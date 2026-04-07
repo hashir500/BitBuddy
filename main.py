@@ -1,139 +1,188 @@
 import tkinter as tk
-from PIL import Image, ImageTk, ImageSequence
+from PIL import Image, ImageTk, ImageDraw
 from pet import Pet
 
-# Standard GIF speed is usually between 50ms and 150ms
-BASE_SIZE = 400 
-ANIMATION_SPEED = 100 
 
-class TamagotchiApp:
-    def __init__(self, root, pet):
-        self.root = root
+WINDOW_SIZE = "400x600" 
+GIF_SIZE = (380, 380)   
+ICON_SIZE = (32, 32)    
+BTN_DIAMETER = 48       
+
+class BitBuddyTk:
+    def __init__(self, pet):
         self.pet = pet
-        self.root.title("Desktop Dino")
-        self.root.attributes('-topmost', True)
-        self.root.geometry(f"{BASE_SIZE}x700+100+100") 
-        self.root.config(bg="#2c3e50")
-
-        # --- Sprite Manager ---
-        self.current_frames = []
-        self.frame_idx = 0
-        self.current_anim_file = None  # Track what is currently playing
-        self.is_busy = False           # Prevents overlapping animations
+        self.root = tk.Tk()
         
-        # Load the default animation immediately
-        self.set_animation("assets/idle.gif")
+        # 1. Window Styling
+        self.root.overrideredirect(True)
+        self.root.attributes("-topmost", True)
+        self.root.geometry(WINDOW_SIZE)
+        self.root.config(bg="#1a1a1a")
 
-        # --- UI Setup ---
-        self.anim_label = tk.Label(root, image=self.current_frames[0], bd=0, bg="#2c3e50")
-        self.anim_label.grid(row=0, column=0, columnspan=3, pady=10)
+        # 2. Draggable Logic
+        self.root.bind("<Button-1>", self.start_drag)
+        self.root.bind("<B1-Motion>", self.do_drag)
 
-        self.status_label = tk.Label(
-            root, text=self.pet.get_status(),
-            font=("Courier", 10, "bold"), fg="#ecf0f1", bg="#34495e",
-            padx=10, pady=10, justify="left", width=45, height=8 
-        )
-        self.status_label.grid(row=1, column=0, columnspan=3, padx=20, sticky="ew")
+        # 3. Stats Display (Top Dashboard)
+        self.stats_canvas = tk.Canvas(self.root, width=380, height=95, bg="#1a1a1a", highlightthickness=0)
+        self.stats_canvas.pack(pady=(10, 0))
 
-        btn_style = {"width": 10, "pady": 5, "font": ("Arial", 9, "bold")}
-        tk.Button(root, text="FEED", command=self.feed_action, bg="#27ae60", **btn_style).grid(row=2, column=0, pady=20)
-        tk.Button(root, text="PLAY", command=self.play_action, bg="#2980b9", **btn_style).grid(row=2, column=1, pady=20)
-        tk.Button(root, text="SLEEP", command=self.sleep_action, bg="#8e44ad", **btn_style).grid(row=2, column=2, pady=20)
+        # 4. Pet Animation Display
+        self.canvas = tk.Label(self.root, bg="#1a1a1a", bd=0)
+        self.canvas.pack(pady=5)
+        
+        self.frames = []
+        self.current_frame = 0
+        self.anim_loop_id = None 
+        self.is_performing = False
 
-        # Start loops
-        self.animate_loop()
-        self.update_logic()
+        # 5. Button Row (Bottom)
+        self.btn_frame = tk.Frame(self.root, bg="#1a1a1a")
+        # pady=25 provides enough gap without being "too big"
+        self.btn_frame.pack(side="bottom", pady=25)
 
-    def set_animation(self, filename):
-        """Helper to load and switch GIFs. Only reloads if the file is different."""
-        if self.current_anim_file == filename:
-            return # Already playing this animation, don't reset it!
+        self.create_circular_buttons()
 
+        # 6. Initialize
+        self.load_animation("assets/idle.gif")
+        self.update_loop() 
+        self.root.mainloop()
+
+    # --- UI RENDERING ---
+    def make_circle_icon(self, color, icon_path):
+        """Creates a circular background with a PNG overlay."""
+        bg = Image.new("RGBA", (BTN_DIAMETER, BTN_DIAMETER), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(bg)
+        draw.ellipse((0, 0, BTN_DIAMETER-1, BTN_DIAMETER-1), fill=color)
+        
         try:
-            img = Image.open(filename)
-            self.current_frames = [
-                ImageTk.PhotoImage(frame.copy().convert('RGBA').resize((BASE_SIZE, BASE_SIZE), Image.Resampling.LANCZOS)) 
-                for frame in ImageSequence.Iterator(img)
-            ]
-            self.frame_idx = 0
-            self.current_anim_file = filename
+            icon = Image.open(icon_path).convert("RGBA")
+            icon = icon.resize(ICON_SIZE, Image.Resampling.LANCZOS)
+            offset = ((BTN_DIAMETER - ICON_SIZE[0]) // 2, (BTN_DIAMETER - ICON_SIZE[1]) // 2)
+            bg.paste(icon, offset, icon)
         except Exception as e:
-            print(f"Could not load {filename}: {e}")
-
-    def play_temp_animation(self, gif_file, duration_ms=3000):
-        """Swaps to an action GIF then returns to state-based animation."""
-        self.is_busy = True
-        self.set_animation(gif_file)
-        self.root.after(duration_ms, self.reset_to_default)
-
-    def reset_to_default(self):
-        """Resumes background animation based on current health/life."""
-        self.is_busy = False
-        condition = self.pet.get_condition()
-        if condition == "DEAD":
-            self.set_animation("assets/dead.gif")
-        elif condition == "SICK":
-            self.set_animation("assets/sick.gif")
-        else:
-            self.set_animation("assets/idle.gif")
-
-    def animate_loop(self):
-        """Cycles through the frames of the current animation."""
-        if self.current_frames:
-            self.anim_label.config(image=self.current_frames[self.frame_idx])
-            self.frame_idx = (self.frame_idx + 1) % len(self.current_frames)
-            
-            # Special case: If dead and not performing a temp action, 
-            # stop at the last frame of the death animation (e.g., the grave).
-            if self.pet.get_condition() == "DEAD" and not self.is_busy:
-                if self.frame_idx == 0: # We just finished the loop
-                    self.anim_label.config(image=self.current_frames[-1])
-                    return # Stop the loop here
-
-        self.root.after(ANIMATION_SPEED, self.animate_loop)
-
-    def update_logic(self):
-        """Handles pet decay and background state switching."""
-        self.pet.time_passes()
-        self.status_label.config(text=self.pet.get_status())
+            print(f"Error: Could not find {icon_path}")
         
-        # Auto-switch background animation if not busy playing a specific action
-        if not self.is_busy:
-            condition = self.pet.get_condition()
-            if condition == "DEAD": 
-                self.set_animation("assets/dead.gif")
-            elif condition == "SICK": 
-                self.set_animation("assets/sick.gif")
-            else:
-                self.set_animation("assets/idle.gif")
+        return ImageTk.PhotoImage(bg)
+
+    def create_circular_buttons(self):
+        self.icon_refs = {}
+        btn_style = {
+            "bg": "#1a1a1a",
+            "activebackground": "#1a1a1a",
+            "borderwidth": 0,
+            "highlightthickness": 0,
+            "cursor": "hand2"
+        }
+
+        # Button data mapping
+        button_data = [
+            ("feed", "assets/meat.png", "FEED", "assets/eat.gif"),
+            ("play", "assets/play.png", "PLAY", "assets/play.gif"),
+            ("sleep", "assets/sleep.png", "SLEEP", "assets/sleep.gif"),
+            ("exit", "assets/exit.png", "EXIT", None)
+        ]
+
+        for i, (key, path, action, gif) in enumerate(button_data):
+            self.icon_refs[key] = self.make_circle_icon("#262626", path)
             
-        # Check logic every 5 seconds
-        self.root.after(5000, self.update_logic)
+            if action == "EXIT":
+                btn = tk.Button(self.btn_frame, image=self.icon_refs[key], command=self.root.destroy, **btn_style)
+            else:
+                btn = tk.Button(self.btn_frame, image=self.icon_refs[key], 
+                                command=lambda a=action, g=gif: self.handle_action(a, g), **btn_style)
+            btn.grid(row=0, column=i, padx=10)
 
-    def feed_action(self):
-        if self.pet.get_condition() == "DEAD": return
-        success, msg = self.pet.feed()
-        self.status_label.config(text=f"{msg}\n{self.pet.get_status()}")
-        if success:
-            self.play_temp_animation("assets/eat.gif")
+        # Revive Button
+        self.icon_refs['rev_off'] = self.make_circle_icon("#262626", "assets/revive.png")
+        self.btn_revive = tk.Button(self.btn_frame, image=self.icon_refs['rev_off'], 
+                                    state="disabled", command=self.revive_pet, **btn_style)
+        self.btn_revive.grid(row=0, column=4, padx=10)
 
-    def play_action(self):
-        if self.pet.get_condition() == "DEAD": return
-        success, msg = self.pet.play()
-        self.status_label.config(text=f"{msg}\n{self.pet.get_status()}")
-        if success:
-            self.play_temp_animation("assets/play.gif")
+    def draw_bars(self):
+        self.stats_canvas.delete("all")
+        BAR_WIDTH = 220
+        START_X = 110
+        BAR_HEIGHT = 4
+        GAP = 16 # Slightly tighter gap
 
-    def sleep_action(self):
-        if self.pet.get_condition() == "DEAD": return
-        success, msg = self.pet.sleep()
-        self.status_label.config(text=f"{msg}\n{self.pet.get_status()}")
+        def render_bar(index, label, value, color):
+            y = 15 + (index * GAP)
+            self.stats_canvas.create_text(40, y + 2, text=label, fill=color, font=("Courier", 8, "bold"), anchor="w")
+            self.stats_canvas.create_rectangle(START_X, y, START_X + BAR_WIDTH, y + BAR_HEIGHT, fill="#262626", outline="")
+            val = max(0, min(100, value))
+            fill_w = START_X + (BAR_WIDTH * (val / 100))
+            if val > 0:
+                self.stats_canvas.create_rectangle(START_X, y, fill_w, y + BAR_HEIGHT, fill=color, outline="")
+
+        render_bar(0, "HEALTH", self.pet.health, "#2ecc71")
+        render_bar(1, "HUNGER", self.pet.hunger, "#e67e22")
+        render_bar(2, "HAPPY", getattr(self.pet, 'happiness', 100), "#f1c40f")
+        render_bar(3, "ENERGY", getattr(self.pet, 'energy', 100), "#9b59b6")
+
+    def start_drag(self, event):
+        self.x, self.y = event.x, event.y
+
+    def do_drag(self, event):
+        nx = self.root.winfo_x() + (event.x - self.x)
+        ny = self.root.winfo_y() + (event.y - self.y)
+        self.root.geometry(f"+{nx}+{ny}")
+
+    def load_animation(self, path):
+        if self.anim_loop_id: self.root.after_cancel(self.anim_loop_id)
+        try:
+            img = Image.open(path)
+            self.frames = []
+            while True:
+                f = img.copy().resize(GIF_SIZE, Image.Resampling.LANCZOS)
+                self.frames.append(ImageTk.PhotoImage(f))
+                img.seek(len(self.frames))
+        except EOFError: pass
+        self.current_frame = 0
+        self.animate()
+
+    def animate(self):
+        if not self.frames: return
+        self.canvas.config(image=self.frames[self.current_frame])
+        self.current_frame = (self.current_frame + 1) % len(self.frames)
+        self.anim_loop_id = self.root.after(100, self.animate)
+
+    def handle_action(self, action, gif_path):
+        if self.pet.get_condition() == "DEAD" or self.is_performing: return
+        success = False
+        if action == "FEED": success, _ = self.pet.feed()
+        elif action == "PLAY": success, _ = self.pet.play()
+        elif action == "SLEEP": success, _ = self.pet.sleep()
         if success:
-            # Sleep usually takes longer
-            self.play_temp_animation("assets/sleep.gif", duration_ms=5000)
+            self.is_performing = True
+            self.load_animation(gif_path)
+            self.draw_bars()
+            self.root.after(3500, self.end_action)
+
+    def end_action(self):
+        self.is_performing = False
+        self.refresh_state()
+
+    def update_loop(self):
+        self.pet.time_passes()
+        self.draw_bars()
+        if not self.is_performing: self.refresh_state()
+        self.root.after(4000, self.update_loop)
+
+    def refresh_state(self):
+        if self.pet.get_condition() == "DEAD":
+            self.btn_revive.config(state="normal")
+            self.load_animation("assets/dead.gif")
+        else:
+            self.btn_revive.config(state="disabled")
+            if not self.is_performing: self.load_animation("assets/idle.gif")
+
+    def revive_pet(self):
+        self.pet.health, self.pet.hunger = 100, 50
+        self.is_performing = False
+        self.refresh_state()
+        self.draw_bars()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    my_pet = Pet(name="Rex")
-    app = TamagotchiApp(root, my_pet)
-    root.mainloop()
+    my_pet = Pet(name="BitBuddy")
+    BitBuddyTk(my_pet)

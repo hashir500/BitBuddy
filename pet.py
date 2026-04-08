@@ -108,17 +108,16 @@ class Pet:
         return "HAPPY"
     
     
-    def save_stats(self):
-        """Stores the pet's current stats into a JSON file."""
-        stats = {
-            "health": self.pet.health,
-            "hunger": self.pet.hunger,
-            "happiness": getattr(self.pet, 'happiness', 100),
-            "energy": getattr(self.pet, 'energy', 100)
-        }
-        with open("pet_stats.json", "w") as f:
-            json.dump(stats, f)
-        print("Stats saved!")
+   
+def save_stats(self):
+    stats = {
+        "health": self.health,      # Use 'self' directly
+        "hunger": self.hunger,
+        "happiness": getattr(self, 'happiness', 100),
+        "energy": getattr(self, 'energy', 100)
+    }
+    with open("pet_stats.json", "w") as f:
+        json.dump(stats, f)
 
         
         

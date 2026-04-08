@@ -1,8 +1,9 @@
 import tkinter as tk
 from PIL import Image, ImageTk, ImageDraw
 from pet import Pet
+import os
 
-
+# --- CONFIGURATION ---
 WINDOW_SIZE = "400x600" 
 GIF_SIZE = (380, 380)   
 ICON_SIZE = (32, 32)    
@@ -11,6 +12,10 @@ BTN_DIAMETER = 48
 class BitBuddyTk:
     def __init__(self, pet):
         self.pet = pet
+        
+        if hasattr(self.pet, 'load_stats'):
+            self.pet.load_stats()
+        
         self.root = tk.Tk()
         
         # 1. Window Styling
@@ -23,7 +28,7 @@ class BitBuddyTk:
         self.root.bind("<Button-1>", self.start_drag)
         self.root.bind("<B1-Motion>", self.do_drag)
 
-        # 3. Stats Display (Top Dashboard)
+        # 3. Stats Display
         self.stats_canvas = tk.Canvas(self.root, width=380, height=95, bg="#1a1a1a", highlightthickness=0)
         self.stats_canvas.pack(pady=(10, 0))
 
@@ -36,9 +41,8 @@ class BitBuddyTk:
         self.anim_loop_id = None 
         self.is_performing = False
 
-        # 5. Button Row (Bottom)
+        # 5. Button Row
         self.btn_frame = tk.Frame(self.root, bg="#1a1a1a")
-        # pady=25 provides enough gap without being "too big"
         self.btn_frame.pack(side="bottom", pady=25)
 
         self.create_circular_buttons()
@@ -50,32 +54,22 @@ class BitBuddyTk:
 
     # --- UI RENDERING ---
     def make_circle_icon(self, color, icon_path):
-        """Creates a circular background with a PNG overlay."""
         bg = Image.new("RGBA", (BTN_DIAMETER, BTN_DIAMETER), (0, 0, 0, 0))
         draw = ImageDraw.Draw(bg)
         draw.ellipse((0, 0, BTN_DIAMETER-1, BTN_DIAMETER-1), fill=color)
-        
         try:
             icon = Image.open(icon_path).convert("RGBA")
             icon = icon.resize(ICON_SIZE, Image.Resampling.LANCZOS)
             offset = ((BTN_DIAMETER - ICON_SIZE[0]) // 2, (BTN_DIAMETER - ICON_SIZE[1]) // 2)
             bg.paste(icon, offset, icon)
-        except Exception as e:
-            print(f"Error: Could not find {icon_path}")
-        
+        except Exception:
+            pass
         return ImageTk.PhotoImage(bg)
 
     def create_circular_buttons(self):
         self.icon_refs = {}
-        btn_style = {
-            "bg": "#1a1a1a",
-            "activebackground": "#1a1a1a",
-            "borderwidth": 0,
-            "highlightthickness": 0,
-            "cursor": "hand2"
-        }
+        btn_style = {"bg": "#1a1a1a", "activebackground": "#1a1a1a", "borderwidth": 0, "highlightthickness": 0, "cursor": "hand2"}
 
-        # Button data mapping
         button_data = [
             ("feed", "assets/meat.png", "FEED", "assets/eat.gif"),
             ("play", "assets/play.png", "PLAY", "assets/play.gif"),
@@ -85,15 +79,15 @@ class BitBuddyTk:
 
         for i, (key, path, action, gif) in enumerate(button_data):
             self.icon_refs[key] = self.make_circle_icon("#262626", path)
-            
             if action == "EXIT":
-                btn = tk.Button(self.btn_frame, image=self.icon_refs[key], command=self.root.destroy, **btn_style)
+                # Calls your pet.save_stats() before closing
+                btn = tk.Button(self.btn_frame, image=self.icon_refs[key], 
+                                command=lambda: [self.pet.save_stats(), self.root.destroy()], **btn_style)
             else:
                 btn = tk.Button(self.btn_frame, image=self.icon_refs[key], 
                                 command=lambda a=action, g=gif: self.handle_action(a, g), **btn_style)
             btn.grid(row=0, column=i, padx=10)
 
-        # Revive Button
         self.icon_refs['rev_off'] = self.make_circle_icon("#262626", "assets/revive.png")
         self.btn_revive = tk.Button(self.btn_frame, image=self.icon_refs['rev_off'], 
                                     state="disabled", command=self.revive_pet, **btn_style)
@@ -101,11 +95,7 @@ class BitBuddyTk:
 
     def draw_bars(self):
         self.stats_canvas.delete("all")
-        BAR_WIDTH = 220
-        START_X = 110
-        BAR_HEIGHT = 4
-        GAP = 16 # Slightly tighter gap
-
+        BAR_WIDTH, START_X, BAR_HEIGHT, GAP = 220, 110, 4, 16
         def render_bar(index, label, value, color):
             y = 15 + (index * GAP)
             self.stats_canvas.create_text(40, y + 2, text=label, fill=color, font=("Courier", 8, "bold"), anchor="w")
@@ -124,8 +114,7 @@ class BitBuddyTk:
         self.x, self.y = event.x, event.y
 
     def do_drag(self, event):
-        nx = self.root.winfo_x() + (event.x - self.x)
-        ny = self.root.winfo_y() + (event.y - self.y)
+        nx, ny = self.root.winfo_x() + (event.x - self.x), self.root.winfo_y() + (event.y - self.y)
         self.root.geometry(f"+{nx}+{ny}")
 
     def load_animation(self, path):
@@ -157,6 +146,7 @@ class BitBuddyTk:
             self.is_performing = True
             self.load_animation(gif_path)
             self.draw_bars()
+            self.pet.save_stats() # Save after action
             self.root.after(3500, self.end_action)
 
     def end_action(self):
@@ -166,6 +156,7 @@ class BitBuddyTk:
     def update_loop(self):
         self.pet.time_passes()
         self.draw_bars()
+        self.pet.save_stats() # Autosave
         if not self.is_performing: self.refresh_state()
         self.root.after(4000, self.update_loop)
 
@@ -182,6 +173,7 @@ class BitBuddyTk:
         self.is_performing = False
         self.refresh_state()
         self.draw_bars()
+        self.pet.save_stats()
 
 if __name__ == "__main__":
     my_pet = Pet(name="BitBuddy")

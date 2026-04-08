@@ -109,33 +109,31 @@ class Pet:
     
     
    
-def save_stats(self):
-    stats = {
-        "health": self.health,      # Use 'self' directly
-        "hunger": self.hunger,
-        "happiness": getattr(self, 'happiness', 100),
-        "energy": getattr(self, 'energy', 100)
-    }
-    with open("pet_stats.json", "w") as f:
-        json.dump(stats, f)
+    def save_stats(self):
+        stats = {
+            "health": self.health,      
+            "hunger": self.hunger,
+            "happiness": getattr(self, 'happiness', 100),
+            "energy": getattr(self, 'energy', 100)
+        }
+        with open("pet_stats.json", "w") as f:
+            json.dump(stats, f)
 
         
         
-def load_stats(self):
-        """Reads stats from the JSON file and updates the pet object."""
+    def load_stats(self):
         if os.path.exists("pet_stats.json"):
             try:
                 with open("pet_stats.json", "r") as f:
                     stats = json.load(f)
-                
-                self.pet.health = stats.get("health", 100)
-                self.pet.hunger = stats.get("hunger", 50)
-                
-                if hasattr(self.pet, 'happiness'):
-                    self.pet.happiness = stats.get("happiness", 100)
-                if hasattr(self.pet, 'energy'):
-                    self.pet.energy = stats.get("energy", 100)
-                    
-                print("Stats loaded successfully!")
+            
+            
+                self.health = stats.get("health", 100)
+                self.hunger = stats.get("hunger", 50)
+            
+                if hasattr(self, 'happiness'):
+                    self.happiness = stats.get("happiness", 100)
+                if hasattr(self, 'energy'):
+                    self.energy = stats.get("energy", 100)
             except Exception as e:
-                print(f"Error loading stats: {e}")
+                print(f"Error loading: {e}")

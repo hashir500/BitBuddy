@@ -1,26 +1,23 @@
-# Python cache
+# --- Python Specific ---
 __pycache__/
 *.py[cod]
-*.pyo
+*$py.class
+.ipynb_checkpoints
 
-# Virtual environments
-.venv/
-.venv1/
-.venv311/
+# --- Environments ---
+
+bitB__env/
 venv/
 env/
+.env
 
-# VS Code settings
-.vscode/
+# --- Game Save Data ---
+pet_stats.json
 
-# Byte-compiled files
-*.pyc
 
-# OS files
 .DS_Store
 Thumbs.db
 
-# Pyinstaller
-*.spec
-dist/
-build/
+
+.vscode/
+.idea/

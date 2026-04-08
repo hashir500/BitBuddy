@@ -134,7 +134,7 @@ class BitBuddyTk:
         if not self.frames: return
         self.canvas.config(image=self.frames[self.current_frame])
         self.current_frame = (self.current_frame + 1) % len(self.frames)
-        self.anim_loop_id = self.root.after(100, self.animate)
+        self.anim_loop_id = self.root.after(1000, self.animate)
 
     def handle_action(self, action, gif_path):
         if self.pet.get_condition() == "DEAD" or self.is_performing: return

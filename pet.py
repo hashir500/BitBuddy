@@ -19,7 +19,7 @@ class Pet:
     
     def __post_init__(self,):
          self.initial_time = time.time()
-         self.interval =1
+         self.interval = 400
 
     def get_status(self):
         # Determine the warning message based on current stats

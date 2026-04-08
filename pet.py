@@ -122,3 +122,21 @@ class Pet:
 
         
         
+def load_stats(self):
+        """Reads stats from the JSON file and updates the pet object."""
+        if os.path.exists("pet_stats.json"):
+            try:
+                with open("pet_stats.json", "r") as f:
+                    stats = json.load(f)
+                
+                self.pet.health = stats.get("health", 100)
+                self.pet.hunger = stats.get("hunger", 50)
+                
+                if hasattr(self.pet, 'happiness'):
+                    self.pet.happiness = stats.get("happiness", 100)
+                if hasattr(self.pet, 'energy'):
+                    self.pet.energy = stats.get("energy", 100)
+                    
+                print("Stats loaded successfully!")
+            except Exception as e:
+                print(f"Error loading stats: {e}")
